@@ -13,8 +13,8 @@ from .views import (
 urlpatterns = [
     # Book views
     path('books/', list_books, name='list_books'),
-    path('books/add/', add_book, name='add_book'),
-    path('books/edit/<int:pk>/', edit_book, name='edit_book'),
+    path('books/add/', add_book, name='add_book'),          # add book URL
+    path('books/edit/<int:pk>/', edit_book, name='edit_book'),  # edit book URL
     path('books/delete/<int:pk>/', delete_book, name='delete_book'),
 
     # Library detail view
