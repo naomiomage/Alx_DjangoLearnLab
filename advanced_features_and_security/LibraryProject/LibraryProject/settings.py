@@ -128,3 +128,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False   # ✅ Set to False in production
+
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]  # update with your domain in production
+
+# Extra security settings
+SECURE_BROWSER_XSS_FILTER = True   # ✅ Helps prevent reflected XSS attacks
+X_FRAME_OPTIONS = "DENY"           # ✅ Prevents clickjacking
+SECURE_CONTENT_TYPE_NOSNIFF = True # ✅ Stops MIME type sniffing
+
+# Cookies sent only via HTTPS (set to True in production with HTTPS enabled)
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+
