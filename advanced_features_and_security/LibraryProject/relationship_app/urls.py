@@ -1,13 +1,13 @@
 from django.urls import path
 from .views import (
     list_books,
-    LibraryDetailView,
-    register_view,
-    login_view,
-    logout_view,
     add_book,
     edit_book,
     delete_book,
+    register_view,
+    login_view,
+    logout_view,
+    LibraryDetailView, 
 )
 
 urlpatterns = [

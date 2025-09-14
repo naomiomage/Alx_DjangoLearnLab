@@ -40,3 +40,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+isbn = models.CharField(max_length=13, unique=True, blank=True, null=True)
+
