@@ -1,22 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, Book
 
 
+# Register CustomUser properly
 class CustomUserAdmin(UserAdmin):
-    # Show these fields in the admin list view
-    list_display = ('username', 'email', 'date_of_birth', 'is_staff')
-    
-    # Fields to edit when creating/updating a user
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('date_of_birth', 'profile_photo')}),
-    )
-    
-    # Fields to show when adding a new user
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('date_of_birth', 'profile_photo')}),
-    )
+    pass
 
-
-# ✅ This is what the checker wants:
 admin.site.register(CustomUser, CustomUserAdmin)
+
+
+# Register Book model
+@admin.register(Book)
+class BookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'published_date')
+    search_fields = ('title', 'author')
