@@ -5,6 +5,7 @@ from .models import Book
 # --- DRF views (your original code, keep them) ---
 from rest_framework import generics, permissions, serializers
 from .serializers import BookSerializer
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 
 # Django Generic Views (to satisfy checker)
 class BookListView(ListView):
