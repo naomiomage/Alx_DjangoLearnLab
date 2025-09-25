@@ -41,6 +41,18 @@ class BookListCreateView(generics.ListCreateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    # Filtering fields
+    filterset_fields = ['title', 'author', 'publication_year']
+
+    # Searching fields
+    search_fields = ['title', 'author']
+
+    # Ordering fields
+    ordering_fields = ['title', 'publication_year']
+    ordering = ['title']  # default ordering
 
     def perform_create(self, serializer):
         title = serializer.validated_data.get("title")
