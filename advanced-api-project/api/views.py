@@ -3,7 +3,8 @@ from django.urls import reverse_lazy
 from .models import Book
 
 # --- DRF views (your original code, keep them) ---
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions, serializers, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import BookSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 
