@@ -1,5 +1,6 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django_filters import rest_framework
 from .models import Book
 
 # --- DRF views (your original code, keep them) ---
