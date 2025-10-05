@@ -2,7 +2,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Post, Comment, Tag
+from taggit.forms import TagWidget  # ✅ Import TagWidget
+from .models import Post, Comment
 
 
 # --- USER FORMS ---
@@ -24,38 +25,14 @@ class UserProfileForm(forms.ModelForm):
 # --- POST FORM ---
 
 class PostForm(forms.ModelForm):
-    # Add a field for tags
-    tags = forms.CharField(
-        required=False,
-        help_text="Enter tags separated by commas (e.g., travel, life, coding)",
-        widget=forms.TextInput(attrs={'placeholder': 'Add tags...'})
-    )
-
     class Meta:
         model = Post
         fields = ['title', 'content', 'tags']  # include tags here
         widgets = {
             'title': forms.TextInput(attrs={'placeholder': 'Enter a title'}),
             'content': forms.Textarea(attrs={'rows': 8, 'placeholder': 'Write your post...'}),
+            'tags': TagWidget(),  # ✅ Taggit widget for tags input
         }
-
-    def save(self, commit=True):
-        """Override save method to handle tags manually."""
-        post = super().save(commit=False)
-        if commit:
-            post.save()
-
-        # Handle tags input (split by commas)
-        tags_str = self.cleaned_data.get('tags', '')
-        tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
-
-        # Clear existing tags and reassign
-        post.tags.clear()
-        for name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=name)
-            post.tags.add(tag)
-
-        return post
 
 
 # --- COMMENT FORM ---
