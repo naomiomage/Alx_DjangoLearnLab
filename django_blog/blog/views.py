@@ -71,13 +71,13 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     template_name = 'blog/comment_form.html'
 
     def form_valid(self, form):
-        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
+        post = get_object_or_404(Post, pk=self.kwargs['pk'])  # changed 'post_id' → 'pk'
         form.instance.author = self.request.user
         form.instance.post = post
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('blog:post-detail', kwargs={'pk': self.kwargs['post_id']})
+        return reverse('blog:post-detail', kwargs={'pk': self.kwargs['pk']})  # also changed 'post_id' → 'pk'
 
 
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
