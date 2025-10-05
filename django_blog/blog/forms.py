@@ -26,3 +26,21 @@ class PostForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'placeholder': 'Enter a title'}),
             'content': forms.Textarea(attrs={'rows': 8, 'placeholder': 'Write your post...'}),
         }
+
+from .models import Comment
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Write your comment...'})
+}
+
+
+def clean_content(self):
+    content = self.cleaned_data.get('content', '').strip()
+    if not content:
+        raise forms.ValidationError('Comment cannot be empty.')
+    return content
