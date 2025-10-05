@@ -62,3 +62,27 @@ python manage.py test
 
 
 
+
+
+\## Tagging and Search
+
+
+
+\### Tags
+
+\- Add tags when creating/editing a post using a comma-separated list.
+
+\- Tags are stored in `Tag` model and linked via M2M to `Post`.
+
+\- Tag pages: `/tags/<tag\_name>/` shows posts for that tag.
+
+
+
+\### Search
+
+\- Access search via `/search/?q=keyword`
+
+\- Searches title, content, and tag names.
+
+
+

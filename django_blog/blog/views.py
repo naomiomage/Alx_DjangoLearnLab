@@ -1,14 +1,21 @@
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
-from .models import Post, Comment
-from .forms import CommentForm
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.db.models import Q
+
+from .models import Post, Comment, Tag
+from .forms import PostForm, CommentForm
 
 
-# -------------------------
-# Post Views
-# -------------------------
+# --- HOME PAGE ---
+def home(request):
+    return render(request, 'blog/home.html')
+
+
+# --- POST VIEWS ---
 class PostListView(ListView):
     model = Post
     template_name = 'blog/post_list.html'
@@ -23,87 +30,124 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['comments'] = Comment.objects.filter(post=self.object)
-        context['comment_form'] = CommentForm()
+        context['comments'] = Comment.objects.filter(post=self.object).order_by('-created_at')
+        context['form'] = CommentForm()
         return context
 
 
-class PostCreateView(LoginRequiredMixin, CreateView):
+@method_decorator(login_required, name='dispatch')
+class PostCreateView(CreateView):
     model = Post
-    fields = ['title', 'content']
+    form_class = PostForm
     template_name = 'blog/post_form.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
+    def get_success_url(self):
+        return reverse('blog:post-detail', kwargs={'pk': self.object.pk})
 
-class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+
+@method_decorator(login_required, name='dispatch')
+class PostUpdateView(UpdateView):
     model = Post
-    fields = ['title', 'content']
+    form_class = PostForm
     template_name = 'blog/post_form.html'
 
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
+    def get_queryset(self):
+        return Post.objects.filter(author=self.request.user)
 
-    def test_func(self):
-        post = self.get_object()
-        return self.request.user == post.author
+    def get_success_url(self):
+        return reverse('blog:post-detail', kwargs={'pk': self.object.pk})
 
 
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+@method_decorator(login_required, name='dispatch')
+class PostDeleteView(DeleteView):
     model = Post
     template_name = 'blog/post_confirm_delete.html'
     success_url = reverse_lazy('blog:post-list')
 
-    def test_func(self):
-        post = self.get_object()
-        return self.request.user == post.author
+    def get_queryset(self):
+        return Post.objects.filter(author=self.request.user)
 
 
-# -------------------------
-# Comment Views
-# -------------------------
-class CommentCreateView(LoginRequiredMixin, CreateView):
+# --- COMMENT VIEWS ---
+@login_required
+def add_comment(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.author = request.user
+            comment.post = post
+            comment.save()
+            return redirect('blog:post-detail', pk=post.pk)
+    else:
+        form = CommentForm()
+    return render(request, 'blog/comment_form.html', {'form': form})
+
+
+@method_decorator(login_required, name='dispatch')
+class CommentUpdateView(UpdateView):
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment_form.html'
 
-    def form_valid(self, form):
-        post = get_object_or_404(Post, pk=self.kwargs['pk'])  # changed 'post_id' → 'pk'
-        form.instance.author = self.request.user
-        form.instance.post = post
-        return super().form_valid(form)
+    def get_queryset(self):
+        return Comment.objects.filter(author=self.request.user)
 
     def get_success_url(self):
-        return reverse('blog:post-detail', kwargs={'pk': self.kwargs['pk']})  # also changed 'post_id' → 'pk'
+        return reverse('blog:post-detail', kwargs={'pk': self.object.post.pk})
 
 
-class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment_form.html'
-
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
-
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
-
-    def get_success_url(self):
-        return reverse('blog:post-detail', args=[self.object.post.pk])
-
-
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+@method_decorator(login_required, name='dispatch')
+class CommentDeleteView(DeleteView):
     model = Comment
     template_name = 'blog/comment_confirm_delete.html'
 
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
+    def get_queryset(self):
+        return Comment.objects.filter(author=self.request.user)
 
     def get_success_url(self):
-        return reverse('blog:post-detail', args=[self.object.post.pk])
+        return reverse_lazy('blog:post-list')
+
+
+# --- TAG FILTER VIEW ---
+class PostsByTagView(ListView):
+    model = Post
+    template_name = 'blog/post_list.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        tag_name = self.kwargs.get('tag_name')
+        tag = get_object_or_404(Tag, name=tag_name)
+        return Post.objects.filter(tags=tag).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tag_name'] = self.kwargs.get('tag_name')
+        return context
+
+
+# --- SEARCH VIEW ---
+class SearchResultsView(ListView):
+    model = Post
+    template_name = 'blog/search_results.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        query = self.request.GET.get('q', '')
+        if query:
+            return Post.objects.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(tags__name__icontains=query)
+            ).distinct()
+        return Post.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('q', '')
+        return context
