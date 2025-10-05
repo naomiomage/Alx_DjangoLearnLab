@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from taggit.managers import TaggableManager
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -9,12 +10,11 @@ class Tag(models.Model):
 
 
 class Post(models.Model):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=255)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    tags = models.ManyToManyField(Tag, related_name='posts', blank=True)
+    tags = TaggableManager()  # ← replace your ManyToMany field with this
 
     def __str__(self):
         return self.title
