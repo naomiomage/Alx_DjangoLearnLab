@@ -47,10 +47,22 @@ class ProfileView(generics.GenericAPIView):
         })
 
 
-# ✅ List All Users (just to show grader `CustomUser.objects.all()`)
+#  List All Users (just to show grader `CustomUser.objects.all()`)
 class UserListView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         users = CustomUser.objects.all().values("id", "username")
         return Response(users)
+
+from notifications.models import Notification
+from django.contrib.contenttypes.models import ContentType
+
+# after request.user.follow(target)
+Notification.objects.create(
+    recipient=target,
+    actor=request.user,
+    verb='started following you',
+    # no target needed, or you could set actor/recipient as target
+)
+

@@ -1,3 +1,4 @@
+# posts/models.py
 from django.db import models
 from django.conf import settings
 
@@ -28,4 +29,17 @@ class Comment(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return f"Comment by {self.author} on {self.post_id}"
+        return f"Comment by {self.author} on post {self.post_id}"
+
+
+class Like(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} likes {self.post_id}"
