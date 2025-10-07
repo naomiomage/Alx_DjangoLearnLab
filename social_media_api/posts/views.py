@@ -1,87 +1,82 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets, permissions, generics, status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
-from .models import Post, Comment
-from .serializers import PostSerializer, CommentSerializer
-from .permissions import IsOwnerOrReadOnly
+from django.contrib.contenttypes.models import ContentType
 
-class SmallResultsSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+from .models import Post, Comment, Like
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer
+from notifications.models import Notification
 
 
+# -----------------------
+# POST & COMMENT VIEWS
+# -----------------------
 class PostViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for posts. List and retrieve are public; create/update/delete require authentication.
-    Users can only update/delete their own posts (IsOwnerOrReadOnly).
-    Search by title or content allowed using ?search=term
-    """
-    queryset = Post.objects.all().select_related('author').prefetch_related('comments')
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    pagination_class = SmallResultsSetPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'content']
-    ordering_fields = ['created_at', 'updated_at', 'title']
-    ordering = ['-created_at']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for comments. Comments can be filtered by ?post=<id>.
-    Only comment author can update/delete.
-    """
-    queryset = Comment.objects.all().select_related('author', 'post')
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    pagination_class = SmallResultsSetPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['content']
-    ordering_fields = ['created_at', 'updated_at']
-    ordering = ['created_at']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        post_id = self.request.query_params.get('post')
-        if post_id is not None:
-            queryset = queryset.filter(post_id=post_id)
-        return queryset
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        # For creating a comment, the client must send "post": post_id in payload.
         serializer.save(author=self.request.user)
 
 
-# posts/views.py
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-
-from django.contrib.auth import get_user_model
-from .models import Post
-from .serializers import PostSerializer
-
-User = get_user_model()
-
-class FeedPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
+# -----------------------
+# FEED VIEW
+# -----------------------
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated])
 def feed_view(request):
-    # get users the current user follows
-    following_users = request.user.following.all()
-    qs = Post.objects.filter(author__in=following_users).order_by('-created_at')
-    paginator = FeedPagination()
-    page = paginator.paginate_queryset(qs, request)
-    serializer = PostSerializer(page, many=True, context={'request': request})
-    return paginator.get_paginated_response(serializer.data)
+    user = request.user
+    following_users = user.following.all()
+    posts = Post.objects.filter(author__in=following_users)
+    serializer = PostSerializer(posts, many=True, context={'request': request})
+    return Response(serializer.data)
 
 
+# -----------------------
+# LIKE / UNLIKE VIEWS
+# -----------------------
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def like_post(request, pk):
+    post = generics.get_object_or_404(Post, pk=pk)
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+    if not created:
+        return Response({'detail': 'You already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create notification when someone likes a post
+    if post.author != request.user:
+        Notification.objects.create(
+            recipient=post.author,
+            actor=request.user,
+            verb='liked your post',
+            target_content_type=ContentType.objects.get_for_model(post),
+            target_object_id=str(post.id)
+        )
+
+    serializer = LikeSerializer(like)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def unlike_post(request, pk):
+    post = generics.get_object_or_404(Post, pk=pk)
+    like = Like.objects.filter(user=request.user, post=post).first()
+
+    if not like:
+        return Response({'detail': 'You have not liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    like.delete()
+    return Response({'detail': 'Unliked successfully.'}, status=status.HTTP_200_OK)

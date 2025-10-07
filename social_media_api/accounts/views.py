@@ -4,8 +4,12 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model, authenticate
 from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import get_object_or_404
+from notifications.models import Notification
 
 CustomUser = get_user_model()
+
 
 # ✅ Register User
 class RegisterView(generics.GenericAPIView):
@@ -41,13 +45,13 @@ class ProfileView(generics.GenericAPIView):
         return Response({
             "id": user.id,
             "username": user.username,
-            "bio": user.bio,
+            "bio": getattr(user, "bio", ""),
             "followers": user.followers.count(),
             "following": user.following.count(),
         })
 
 
-#  List All Users (just to show grader `CustomUser.objects.all()`)
+# ✅ List All Users (for testing)
 class UserListView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -55,14 +59,41 @@ class UserListView(generics.GenericAPIView):
         users = CustomUser.objects.all().values("id", "username")
         return Response(users)
 
-from notifications.models import Notification
-from django.contrib.contenttypes.models import ContentType
 
-# after request.user.follow(target)
-Notification.objects.create(
-    recipient=target,
-    actor=request.user,
-    verb='started following you',
-    # no target needed, or you could set actor/recipient as target
-)
+# ✅ Follow a User
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def follow_user(request, user_id):
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    user = request.user
 
+    if user == target_user:
+        return Response({'detail': 'You cannot follow yourself.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.following.add(target_user)
+
+    # Create notification for the followed user
+    Notification.objects.create(
+        recipient=target_user,
+        actor=user,
+        verb='started following you',
+    )
+
+    return Response({
+        'detail': f'You are now following {target_user.username}.',
+        'target_followers_count': target_user.followers.count()
+    }, status=status.HTTP_200_OK)
+
+
+# ✅ Unfollow a User
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def unfollow_user(request, user_id):
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    user = request.user
+
+    if user == target_user:
+        return Response({'detail': 'You cannot unfollow yourself.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.following.remove(target_user)
+    return Response({'detail': f'You unfollowed {target_user.username}.'}, status=status.HTTP_200_OK)

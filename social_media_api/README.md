@@ -460,6 +460,32 @@ ALX Django Learner |  Building REST APIs
 
 
 
+##### \### **Likes \& Notifications**
+
+
+
+\- POST `/api/posts/<post\_id>/like/` — Like a post (Auth required)
+
+\- POST `/api/posts/<post\_id>/unlike/` — Unlike a post (Auth required)
+
+\- GET `/api/notifications/` — List your notifications (Auth required)
+
+\- POST `/api/notifications/<id>/read/` — Mark a notification read (Auth required)
+
+
+
+Notifications are generated when:
+
+\- someone likes your post
+
+\- someone comments on your post (if you add that hook)
+
+\- someone follows you (if you add that hook)
+
+
+
+
+
 
 
 
