@@ -55,3 +55,33 @@ class CommentViewSet(viewsets.ModelViewSet):
         # For creating a comment, the client must send "post": post_id in payload.
         serializer.save(author=self.request.user)
 
+
+# posts/views.py
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+
+from django.contrib.auth import get_user_model
+from .models import Post
+from .serializers import PostSerializer
+
+User = get_user_model()
+
+class FeedPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def feed_view(request):
+    # get users the current user follows
+    following_users = request.user.following.all()
+    qs = Post.objects.filter(author__in=following_users).order_by('-created_at')
+    paginator = FeedPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = PostSerializer(page, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
+
+
