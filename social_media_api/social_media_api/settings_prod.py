@@ -1,16 +1,16 @@
 # social_media_api/settings_prod.py
-
-from .settings import *   # import base settings (if you split)
+from .settings import *
 import os
 from pathlib import Path
+import dj_database_url
 
-# BASE_DIR = Path(__file__).resolve().parent.parent  # ensure BASE_DIR exists
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')  # MUST be set in env
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = False
+SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret')
 
-# Set this to your domain(s), e.g. ['myapp.herokuapp.com', 'example.com']
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1').split(',')
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1').split(',')
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
