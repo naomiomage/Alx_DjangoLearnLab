@@ -1,3 +1,7 @@
+pip>=24.0
+setuptools>=70.0.0
+wheel>=0.43.0
+
 aiofiles==22.1.0
 aiosqlite==0.18.0
 anyio==3.6.2
@@ -83,8 +87,6 @@ pyparsing==3.0.9
 pyrsistent==0.19.3
 python-dateutil==2.8.2
 python-json-logger==2.0.7
-pywin32==305
-pywinpty==2.0.10
 PyYAML==6.0
 pyzmq==25.0.1
 requests==2.28.2
