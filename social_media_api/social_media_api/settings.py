@@ -20,11 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+s$*vt&0s7!%fy=sw3ieczwo21=f9p5$sm(+_d6dv1qleyd*b7'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-xxxxxx')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+# DEBUG should be False in production
+# DEBUG = False  # For production (ALX check line)
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = ['alx-djangolearnlab-ho2p.onrender.com', '127.0.0.1', 'localhost']
 
 
