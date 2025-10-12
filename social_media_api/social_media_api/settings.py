@@ -138,3 +138,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# --- Security Settings ---
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'True') == 'True'
+
+
