@@ -138,6 +138,11 @@ REST_FRAMEWORK = {
     ],
 }
 
+import os
+
+PORT = int(os.environ.get("PORT", 8000))
+
+
 # --- Security Settings ---
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
