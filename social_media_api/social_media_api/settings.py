@@ -138,6 +138,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 import os
 
 PORT = int(os.environ.get("PORT", 8000))
