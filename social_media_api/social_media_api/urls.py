@@ -16,10 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
+
+# Simple homepage view
+def home(request):
+    return HttpResponse("Welcome to my Django app deployed on Render 🎉")
 
 urlpatterns = [
+    path('', home, name='home'),  # Homepage route
     path('admin/', admin.site.urls),
-    path('api/accounts/', include('accounts.urls')),
-    path('api/', include('posts.urls')),
-    path('api/notifications/', include('notifications.urls')),
+    # If you have an app (like blog or api), include it here:
+    # path('api/', include('social_media_api.urls')),
 ]
