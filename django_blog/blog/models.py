@@ -15,6 +15,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     created_date = models.DateTimeField(default=timezone.now)
     published_date = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)  # ✅ Added this line
 
     def publish(self):
         self.published_date = timezone.now()
